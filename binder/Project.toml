@@ -1,0 +1,9 @@
+[deps]
+AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+JuliaDB = "a93385a2-3734-596a-9a66-3cfbb77141e6"
+NamedArrays = "86f7a689-2022-50b4-a561-43c23ac3c673"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
