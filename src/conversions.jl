@@ -8,22 +8,6 @@ import Base.convert
 cfgrib = pyimport("cfgrib")
 
 
-function python_cfgrib_data(cfgrib_ds::PyObject, data_variable::String)
-    python_shape = cfgrib_ds.get(data_variable).shape
-    values = cfgrib_ds.get(data_variable).values
-    
-    @assert python_shape == size(values)
-    
-    return values
-end
-
-function python_cfgrib_data(path::String, data_variable::String)
-    cfgrib_ds = cfgrib.open_dataset(path)
-
-    return python_cfgrib_data(cfgrib_ds, data_variable)
-end
-
-
 function convert(::Type{DateTime}, np_datetime::PyObject)
     """Converts python numpy `datetime64[ns]` to Julia `DateTime`
     """
@@ -58,6 +42,23 @@ function convert(::Type{Dates.AbstractDateTime}, np_datetime::PyObject)
     end
 end
 
+
+function python_cfgrib_data(cfgrib_ds::PyObject, data_variable::String)
+    python_shape = cfgrib_ds.get(data_variable).shape
+    values = cfgrib_ds.get(data_variable).values
+    
+    @assert python_shape == size(values)
+    
+    return values
+end
+
+function python_cfgrib_data(path::String, data_variable::String)
+    cfgrib_ds = cfgrib.open_dataset(path)
+
+    return python_cfgrib_data(cfgrib_ds, data_variable)
+end
+
+
 function python_cfgrib_coords(cfgrib_ds::PyObject, data_variable::String)
     coordinates = OrderedDict()
     for (name, value) in cfgrib_ds.coords.items()
@@ -73,13 +74,19 @@ function python_cfgrib_coords(cfgrib_ds::PyObject, data_variable::String)
     return coordinates
 end
 
+python_cfgrib_coords(cfgrib_ds::PyObject) = python_cfgrib_coords(cfgrib_ds, "")
+
 function python_cfgrib_coords(path::String, data_variable::String)
     cfgrib_ds = cfgrib.open_dataset(path)
     return python_cfgrib_coords(cfgrib_ds, data_variable)
 end
 
+python_cfgrib_coords(path::String) = python_cfgrib_coords(path, "")
+
 
 python_cfgrib_metadata(cfgrib_ds::PyObject, data_variable::String) = cfgrib_ds.get(data_variable).attrs
+
+python_cfgrib_metadata(cfgrib_ds::PyObject) = cfgrib_ds.attrs
 
 function python_cfgrib_metadata(path::String, data_variable::String)
     cfgrib_ds = cfgrib.open_dataset(path)
@@ -87,11 +94,26 @@ function python_cfgrib_metadata(path::String, data_variable::String)
     return OrderedDict(python_cfgrib_metadata(cfgrib_ds, data_variable))
 end
 
+function python_cfgrib_metadata(path::String)
+    cfgrib_ds = cfgrib.open_dataset(path)
+    
+    return OrderedDict(python_cfgrib_metadata(cfgrib_ds))
+end
 
-struct CFGRIBData
+
+struct CFGRIBDataArray
     data::Array
     coords::OrderedDict
     meta::OrderedDict
+end
+
+function python_cfgrib_load(path::String)
+    cfgrib_ds = cfgrib.open_dataset(path)
+    
+    coords = python_cfgrib_coords(cfgrib_ds)
+    meta   = python_cfgrib_metadata(cfgrib_ds)
+    
+    return CFGRIBDataArray(data, coords, meta)
 end
 
 function python_cfgrib_load(path::String, data_variable::String)
@@ -101,13 +123,17 @@ function python_cfgrib_load(path::String, data_variable::String)
     data   = python_cfgrib_data(cfgrib_ds, data_variable)
     meta   = python_cfgrib_metadata(cfgrib_ds, data_variable)
     
-    return CFGRIBData(data, coords, meta)
+    return CFGRIBDataArray(data, coords, meta)
 end
 
-function convert(::CFGRIBData, cfgrib_ds::PyObject)
-    coords = python_cfgrib_coords(cfgrib_ds, data_variable)
-    data   = python_cfgrib_data(cfgrib_ds, data_variable)
-    meta   = python_cfgrib_metadata(cfgrib_ds, data_variable)
+
+function python_cfgrib_load(path::String, data_variable::String)
+    cfgrib_ds = cfgrib.open_dataset(path)
     
-    return CFGRIBData(data, coords, meta)
+    coords = python_cfgrib_coords(cfgrib_ds)
+    meta   = python_cfgrib_metadata(cfgrib_ds)
+    
+    variables = collect(cfgrib_ds)
+    
+    return CFGRIBDataArray(data, coords, meta)
 end
